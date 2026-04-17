@@ -91,7 +91,7 @@ export default function WeightChart() {
               domain={['dataMin - 0.05', 'dataMax + 0.05']}
               tickFormatter={(v) => v.toFixed(2)}
             />
-            <Tooltip formatter={(value: number) => `${value.toFixed(2)} kg`} />
+            <Tooltip formatter={(value) => `${Number(value).toFixed(2)} kg`} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line
               type="monotone"
