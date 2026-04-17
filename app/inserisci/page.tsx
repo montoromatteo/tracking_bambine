@@ -72,6 +72,11 @@ export default function InserisciPage() {
       return;
     }
 
+    if (eventCategory === 'pumping' && amountMl <= 0) {
+      setToast({ message: 'Inserisci la quantita in ml', type: 'error' });
+      return;
+    }
+
     setSaving(true);
     try {
       const supabase = createClient();
@@ -138,7 +143,7 @@ export default function InserisciPage() {
             baby_id: null,
             event_type: 'pumping',
             occurred_at: occurredAt,
-            amount_ml: amountMl > 0 ? amountMl : null,
+            amount_ml: amountMl,
             weight_grams: null,
             notes: notes || null,
           });
@@ -304,7 +309,7 @@ export default function InserisciPage() {
       {/* Pumping Form */}
       {eventCategory === 'pumping' && (
         <section>
-          <label className="text-sm font-medium text-gray-500 mb-1 block">Quantita (opzionale)</label>
+          <label className="text-sm font-medium text-gray-500 mb-1 block">Quantita (ml)</label>
           <MlStepper value={amountMl} onChange={setAmountMl} />
         </section>
       )}
