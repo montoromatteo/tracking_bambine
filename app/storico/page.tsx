@@ -6,6 +6,7 @@ import { Baby, BabyEvent, EventType } from '@/lib/types';
 import EventCard from '@/components/EventCard';
 import DailySummary from '@/components/DailySummary';
 import IntakeChart from '@/components/IntakeChart';
+import PumpingChart from '@/components/PumpingChart';
 import FrequencyChart from '@/components/FrequencyChart';
 import WeightChart from '@/components/WeightChart';
 
@@ -158,6 +159,7 @@ export default function StoricoPage() {
       {tab === 'grafici' && (
         <div className="space-y-6">
           <IntakeChart />
+          <PumpingChart />
           <FrequencyChart />
           <WeightChart />
         </div>
