@@ -17,25 +17,25 @@ export default function InserisciPage() {
   const [eventCategory, setEventCategory] = useState<EventCategory>('feeding');
   const [selectedBaby, setSelectedBaby] = useState<string | 'both' | null>(null);
   const [dateTime, setDateTime] = useState(toLocalISOString(new Date()));
-  const [feedingType, setFeedingType] = useState<'bottle' | 'breast'>('bottle');
   const [amountMl, setAmountMl] = useState(ML_DEFAULT);
+  const [hasSeno, setHasSeno] = useState(false);
   const [hasFeci, setHasFeci] = useState(false);
   const [hasUrine, setHasUrine] = useState(false);
   const [weightGrams, setWeightGrams] = useState(3000);
   const [notes, setNotes] = useState('');
-  const [perBabyData, setPerBabyData] = useState<Record<string, { amountMl: number; hasFeci: boolean; hasUrine: boolean }>>({});
+  const [perBabyData, setPerBabyData] = useState<Record<string, { amountMl: number; hasSeno: boolean; hasFeci: boolean; hasUrine: boolean }>>({});
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const initPerBabyData = useCallback((babyList: Baby[]) => {
-    const data: Record<string, { amountMl: number; hasFeci: boolean; hasUrine: boolean }> = {};
+    const data: Record<string, { amountMl: number; hasSeno: boolean; hasFeci: boolean; hasUrine: boolean }> = {};
     for (const baby of babyList) {
-      data[baby.id] = { amountMl: ML_DEFAULT, hasFeci: false, hasUrine: false };
+      data[baby.id] = { amountMl: ML_DEFAULT, hasSeno: false, hasFeci: false, hasUrine: false };
     }
     setPerBabyData(data);
   }, []);
 
-  const updateBabyData = useCallback((babyId: string, field: 'amountMl' | 'hasFeci' | 'hasUrine', value: number | boolean) => {
+  const updateBabyData = useCallback((babyId: string, field: 'amountMl' | 'hasSeno' | 'hasFeci' | 'hasUrine', value: number | boolean) => {
     setPerBabyData(prev => ({
       ...prev,
       [babyId]: { ...prev[babyId], [field]: value },
@@ -59,6 +59,7 @@ export default function InserisciPage() {
   const resetForm = useCallback(() => {
     setDateTime(toLocalISOString(new Date()));
     setAmountMl(ML_DEFAULT);
+    setHasSeno(false);
     setHasFeci(false);
     setHasUrine(false);
     setNotes('');
@@ -101,21 +102,34 @@ export default function InserisciPage() {
 
       for (const babyId of babyIds) {
         if (eventCategory === 'feeding') {
-          const eventType: EventType = feedingType === 'bottle' ? 'feeding_bottle' : 'feeding_breast';
           // Use per-baby data when both selected, shared state when single baby
           const isBoth = selectedBaby === 'both';
           const ml = isBoth && babyId ? perBabyData[babyId]?.amountMl ?? ML_DEFAULT : amountMl;
+          const seno = isBoth && babyId ? perBabyData[babyId]?.hasSeno ?? false : hasSeno;
           const feci = isBoth && babyId ? perBabyData[babyId]?.hasFeci ?? false : hasFeci;
           const urine = isBoth && babyId ? perBabyData[babyId]?.hasUrine ?? false : hasUrine;
 
-          eventsToInsert.push({
-            baby_id: babyId,
-            event_type: eventType,
-            occurred_at: occurredAt,
-            amount_ml: feedingType === 'bottle' ? ml : null,
-            weight_grams: null,
-            notes: notes || null,
-          });
+          if (ml > 0) {
+            eventsToInsert.push({
+              baby_id: babyId,
+              event_type: 'feeding_bottle',
+              occurred_at: occurredAt,
+              amount_ml: ml,
+              weight_grams: null,
+              notes: notes || null,
+            });
+          }
+
+          if (seno) {
+            eventsToInsert.push({
+              baby_id: babyId,
+              event_type: 'feeding_breast',
+              occurred_at: occurredAt,
+              amount_ml: null,
+              weight_grams: null,
+              notes: notes || null,
+            });
+          }
 
           if (feci) {
             eventsToInsert.push({
@@ -245,46 +259,19 @@ export default function InserisciPage() {
       {/* Feeding Form */}
       {eventCategory === 'feeding' && (
         <section className="space-y-4">
-          {/* Breast/Bottle Toggle */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setFeedingType('bottle')}
-              className={`flex-1 py-3 px-4 rounded-xl text-base font-medium transition-all tap-target ${
-                feedingType === 'bottle'
-                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
-                  : 'bg-gray-100 text-gray-500 border-2 border-transparent'
-              }`}
-            >
-              🍼 Biberon
-            </button>
-            <button
-              type="button"
-              onClick={() => setFeedingType('breast')}
-              className={`flex-1 py-3 px-4 rounded-xl text-base font-medium transition-all tap-target ${
-                feedingType === 'breast'
-                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
-                  : 'bg-gray-100 text-gray-500 border-2 border-transparent'
-              }`}
-            >
-              🤱 Seno
-            </button>
-          </div>
-
           {selectedBaby === 'both' ? (
             /* Per-baby columns when both selected */
             <div className="grid grid-cols-2 gap-3">
               {babies.map((baby) => {
                 const colors = BABY_COLORS[baby.short_name as keyof typeof BABY_COLORS];
-                const data = perBabyData[baby.id] || { amountMl: ML_DEFAULT, hasFeci: false, hasUrine: false };
+                const data = perBabyData[baby.id] || { amountMl: ML_DEFAULT, hasSeno: false, hasFeci: false, hasUrine: false };
                 return (
                   <div key={baby.id} className={`rounded-xl border-2 ${colors.border} ${colors.bg} p-3 space-y-3`}>
                     <div className={`text-sm font-bold ${colors.text} text-center`}>
                       {baby.name}
                     </div>
-                    {feedingType === 'bottle' && (
-                      <MlStepper value={data.amountMl} onChange={(v) => updateBabyData(baby.id, 'amountMl', v)} />
-                    )}
+                    <MlStepper value={data.amountMl} onChange={(v) => updateBabyData(baby.id, 'amountMl', v)} />
+                    <BooleanToggle label="Seno" icon="🤱" value={data.hasSeno} onChange={(v) => updateBabyData(baby.id, 'hasSeno', v)} />
                     <BooleanToggle label="Feci" icon="💩" value={data.hasFeci} onChange={(v) => updateBabyData(baby.id, 'hasFeci', v)} />
                     <BooleanToggle label="Urine" icon="💦" value={data.hasUrine} onChange={(v) => updateBabyData(baby.id, 'hasUrine', v)} />
                   </div>
@@ -294,10 +281,9 @@ export default function InserisciPage() {
           ) : (
             /* Single baby layout */
             <>
-              {feedingType === 'bottle' && (
-                <MlStepper value={amountMl} onChange={setAmountMl} />
-              )}
+              <MlStepper value={amountMl} onChange={setAmountMl} />
               <div className="space-y-2">
+                <BooleanToggle label="Seno" icon="🤱" value={hasSeno} onChange={setHasSeno} />
                 <BooleanToggle label="Feci" icon="💩" value={hasFeci} onChange={setHasFeci} />
                 <BooleanToggle label="Urine" icon="💦" value={hasUrine} onChange={setHasUrine} />
               </div>
