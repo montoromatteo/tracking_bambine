@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { Baby, BabyEvent, EventType } from '@/lib/types';
-import { formatDate } from '@/lib/date-utils';
 import EventCard from '@/components/EventCard';
 import DailySummary from '@/components/DailySummary';
 import IntakeChart from '@/components/IntakeChart';

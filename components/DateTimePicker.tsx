@@ -1,6 +1,6 @@
 'use client';
 
-import { toLocalISOString, formatRelative } from '@/lib/date-utils';
+import { toLocalISOString } from '@/lib/date-utils';
 
 interface DateTimePickerProps {
   value: string;
