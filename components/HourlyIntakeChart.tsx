@@ -73,23 +73,27 @@ export default function HourlyIntakeChart() {
 
   if (!hasData) return null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderDot = (key: 'amelia' | 'adele', color: string) => (props: any) => {
-    const { cx, cy, payload, index } = props;
-    const value = payload ? (payload[key] as number) : 0;
-    if (!value || value <= 0 || cx == null || cy == null) {
-      return <g key={`empty-${key}-${index ?? 0}`} />;
-    }
-    return (
-      <circle
-        key={`dot-${key}-${index ?? 0}`}
-        cx={cx}
-        cy={cy}
-        r={3}
-        fill={color}
-        stroke={color}
-      />
-    );
+  const renderDot = (key: 'amelia' | 'adele', color: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const DotRenderer = (props: any) => {
+      const { cx, cy, payload, index } = props;
+      const value = payload ? (payload[key] as number) : 0;
+      if (!value || value <= 0 || cx == null || cy == null) {
+        return <g key={`empty-${key}-${index ?? 0}`} />;
+      }
+      return (
+        <circle
+          key={`dot-${key}-${index ?? 0}`}
+          cx={cx}
+          cy={cy}
+          r={3}
+          fill={color}
+          stroke={color}
+        />
+      );
+    };
+    DotRenderer.displayName = `HourlyDot-${key}`;
+    return DotRenderer;
   };
 
   return (
