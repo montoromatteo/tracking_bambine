@@ -78,7 +78,7 @@ export default function PumpingChart() {
             <Line
               type="monotone"
               dataKey="ml"
-              name="Ml tirati"
+              name="ml tirati"
               stroke="#0ea5e9"
               strokeWidth={2}
               dot={{ r: 3 }}

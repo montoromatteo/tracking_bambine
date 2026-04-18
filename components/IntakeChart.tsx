@@ -77,7 +77,7 @@ export default function IntakeChart() {
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-600 mb-2">Ml giornalieri</h3>
+      <h3 className="text-sm font-semibold text-gray-600 mb-2">ml giornalieri</h3>
       <div className="bg-white rounded-xl p-3 shadow-sm">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data}>

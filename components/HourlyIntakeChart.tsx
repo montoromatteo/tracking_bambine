@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase';
 import { BABY_COLORS } from '@/lib/constants';
 import { startOfDay, endOfDay } from 'date-fns';
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -75,25 +75,32 @@ export default function HourlyIntakeChart() {
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-600 mb-2">Ml per ora (oggi)</h3>
+      <h3 className="text-sm font-semibold text-gray-600 mb-2">ml per ora (oggi)</h3>
       <div className="bg-white rounded-xl p-3 shadow-sm">
-        <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-            <XAxis
-              dataKey="hour"
-              tick={{ fontSize: 10 }}
-              interval={2}
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip labelFormatter={(h) => `Ore ${h}:00`} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Line
+              type="monotone"
+              dataKey="amelia"
+              name="Amelia"
+              stroke={BABY_COLORS.AM.chart}
+              strokeWidth={2}
+              dot={{ r: 3 }}
             />
-            <YAxis tick={{ fontSize: 10 }} />
-            <Tooltip
-              labelFormatter={(h) => `Ore ${h}:00`}
-              contentStyle={{ fontSize: 12 }}
+            <Line
+              type="monotone"
+              dataKey="adele"
+              name="Adele"
+              stroke={BABY_COLORS.AD.chart}
+              strokeWidth={2}
+              dot={{ r: 3 }}
             />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="amelia" name="Amelia" stackId="a" fill={BABY_COLORS.AM.chart} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="adele" name="Adele" stackId="a" fill={BABY_COLORS.AD.chart} radius={[4, 4, 0, 0]} />
-          </BarChart>
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </div>
