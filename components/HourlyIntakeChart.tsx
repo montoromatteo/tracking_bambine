@@ -73,6 +73,25 @@ export default function HourlyIntakeChart() {
 
   if (!hasData) return null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderDot = (key: 'amelia' | 'adele', color: string) => (props: any) => {
+    const { cx, cy, payload, index } = props;
+    const value = payload ? (payload[key] as number) : 0;
+    if (!value || value <= 0 || cx == null || cy == null) {
+      return <g key={`empty-${key}-${index ?? 0}`} />;
+    }
+    return (
+      <circle
+        key={`dot-${key}-${index ?? 0}`}
+        cx={cx}
+        cy={cy}
+        r={3}
+        fill={color}
+        stroke={color}
+      />
+    );
+  };
+
   return (
     <div>
       <h3 className="text-sm font-semibold text-gray-600 mb-2">ml per ora (oggi)</h3>
@@ -90,7 +109,8 @@ export default function HourlyIntakeChart() {
               name="Amelia"
               stroke={BABY_COLORS.AM.chart}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={renderDot('amelia', BABY_COLORS.AM.chart)}
+              activeDot={{ r: 4 }}
             />
             <Line
               type="monotone"
@@ -98,7 +118,8 @@ export default function HourlyIntakeChart() {
               name="Adele"
               stroke={BABY_COLORS.AD.chart}
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={renderDot('adele', BABY_COLORS.AD.chart)}
+              activeDot={{ r: 4 }}
             />
           </LineChart>
         </ResponsiveContainer>
