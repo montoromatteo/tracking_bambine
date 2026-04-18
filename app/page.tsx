@@ -7,6 +7,7 @@ import { Baby } from '@/lib/types';
 import { BABY_COLORS } from '@/lib/constants';
 import { formatTime, formatRelative, formatDayTime } from '@/lib/date-utils';
 import { startOfDay, endOfDay, differenceInCalendarDays, differenceInWeeks } from 'date-fns';
+import HourlyIntakeChart from '@/components/HourlyIntakeChart';
 
 interface BabyStats {
   total_ml: number;
@@ -257,6 +258,8 @@ export default function HomePage() {
               </div>
             );
           })}
+
+          <HourlyIntakeChart />
 
           {/* Mamma Section */}
           {mammaStats && (

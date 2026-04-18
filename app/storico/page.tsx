@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { Baby, BabyEvent, EventType } from '@/lib/types';
 import EventCard from '@/components/EventCard';
+import EditEventModal from '@/components/EditEventModal';
 import DailySummary from '@/components/DailySummary';
 import IntakeChart from '@/components/IntakeChart';
 import PumpingChart from '@/components/PumpingChart';
@@ -19,6 +20,7 @@ export default function StoricoPage() {
   const [filterBaby, setFilterBaby] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [editingEvent, setEditingEvent] = useState<BabyEvent | null>(null);
 
   const supabase = createClient();
 
@@ -62,6 +64,14 @@ export default function StoricoPage() {
   const handleDelete = async (id: string) => {
     await supabase.from('events').delete().eq('id', id);
     setEvents((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const handleEditSaved = (updated: BabyEvent) => {
+    setEvents((prev) =>
+      prev
+        .map((e) => (e.id === updated.id ? updated : e))
+        .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
+    );
   };
 
   // Group events by date
@@ -142,6 +152,7 @@ export default function StoricoPage() {
                         key={event.id}
                         event={event}
                         onDelete={handleDelete}
+                        onEdit={setEditingEvent}
                       />
                     ))}
                   </div>
@@ -163,6 +174,14 @@ export default function StoricoPage() {
           <FrequencyChart />
           <WeightChart />
         </div>
+      )}
+
+      {editingEvent && (
+        <EditEventModal
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onSaved={handleEditSaved}
+        />
       )}
     </div>
   );

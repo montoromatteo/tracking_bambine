@@ -8,10 +8,11 @@ import BabyBadge from './BabyBadge';
 interface EventCardProps {
   event: BabyEvent;
   onDelete?: (id: string) => void;
+  onEdit?: (event: BabyEvent) => void;
   showDate?: boolean;
 }
 
-export default function EventCard({ event, onDelete, showDate = false }: EventCardProps) {
+export default function EventCard({ event, onDelete, onEdit, showDate = false }: EventCardProps) {
   const icon = EVENT_TYPE_ICONS[event.event_type];
   const label = EVENT_TYPE_LABELS[event.event_type];
 
@@ -46,18 +47,30 @@ export default function EventCard({ event, onDelete, showDate = false }: EventCa
           <p className="text-xs text-gray-400 mt-0.5 truncate">{event.notes}</p>
         )}
       </div>
-      {onDelete && (
-        <button
-          onClick={() => {
-            if (confirm('Eliminare questo evento?')) {
-              onDelete(event.id);
-            }
-          }}
-          className="text-gray-300 hover:text-red-500 transition-colors p-2 tap-target"
-        >
-          ✕
-        </button>
-      )}
+      <div className="flex items-center">
+        {onEdit && (
+          <button
+            onClick={() => onEdit(event)}
+            aria-label="Modifica"
+            className="text-gray-300 hover:text-blue-500 transition-colors p-2 tap-target"
+          >
+            ✎
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={() => {
+              if (confirm('Eliminare questo evento?')) {
+                onDelete(event.id);
+              }
+            }}
+            aria-label="Elimina"
+            className="text-gray-300 hover:text-red-500 transition-colors p-2 tap-target"
+          >
+            ✕
+          </button>
+        )}
+      </div>
     </div>
   );
 }
