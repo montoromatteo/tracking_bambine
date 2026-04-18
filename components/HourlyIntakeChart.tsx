@@ -17,8 +17,8 @@ import {
 
 interface HourPoint {
   hour: string;
-  amelia: number;
-  adele: number;
+  amelia: number | null;
+  adele: number | null;
 }
 
 export default function HourlyIntakeChart() {
@@ -48,18 +48,20 @@ export default function HourlyIntakeChart() {
       const adele = babies.find((b) => b.short_name === 'AD');
       if (!amelia || !adele) return;
 
-      const buckets: HourPoint[] = Array.from({ length: 24 }, (_, h) => ({
-        hour: h.toString().padStart(2, '0'),
-        amelia: 0,
-        adele: 0,
-      }));
-
+      const ameliaByHour: Record<number, number> = {};
+      const adeleByHour: Record<number, number> = {};
       for (const e of events) {
         const h = new Date(e.occurred_at).getHours();
         const ml = e.amount_ml || 0;
-        if (e.baby_id === amelia.id) buckets[h].amelia += ml;
-        else if (e.baby_id === adele.id) buckets[h].adele += ml;
+        if (e.baby_id === amelia.id) ameliaByHour[h] = (ameliaByHour[h] || 0) + ml;
+        else if (e.baby_id === adele.id) adeleByHour[h] = (adeleByHour[h] || 0) + ml;
       }
+
+      const buckets: HourPoint[] = Array.from({ length: 24 }, (_, h) => ({
+        hour: h.toString().padStart(2, '0'),
+        amelia: ameliaByHour[h] ?? null,
+        adele: adeleByHour[h] ?? null,
+      }));
 
       setHasData(events.length > 0);
       setData(buckets);
@@ -115,6 +117,7 @@ export default function HourlyIntakeChart() {
               strokeWidth={2}
               dot={renderDot('amelia', BABY_COLORS.AM.chart)}
               activeDot={{ r: 4 }}
+              connectNulls
             />
             <Line
               type="monotone"
@@ -124,6 +127,7 @@ export default function HourlyIntakeChart() {
               strokeWidth={2}
               dot={renderDot('adele', BABY_COLORS.AD.chart)}
               activeDot={{ r: 4 }}
+              connectNulls
             />
           </LineChart>
         </ResponsiveContainer>
