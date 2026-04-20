@@ -1,6 +1,6 @@
 'use client';
 
-export type EventCategory = 'feeding' | 'pumping' | 'weight' | 'note' | 'brufen' | 'eparina' | 'vitamin_bk';
+export type EventCategory = 'feeding' | 'needs' | 'pumping' | 'weight' | 'note' | 'brufen' | 'eparina' | 'vitamin_bk';
 
 interface EventTypeSelectorProps {
   selected: EventCategory;
@@ -9,12 +9,13 @@ interface EventTypeSelectorProps {
 
 const ROW1: { value: EventCategory; label: string; icon: string }[] = [
   { value: 'feeding', label: 'Poppata', icon: '🍼' },
-  { value: 'pumping', label: 'Tirare Latte', icon: '💧' },
+  { value: 'needs', label: 'Bisogni', icon: '🚼' },
   { value: 'weight', label: 'Peso', icon: '⚖️' },
   { value: 'note', label: 'Nota', icon: '📝' },
 ];
 
 const ROW2: { value: EventCategory; label: string; icon: string }[] = [
+  { value: 'pumping', label: 'Tirare Latte', icon: '💧' },
   { value: 'brufen', label: 'Brufen', icon: '💊' },
   { value: 'eparina', label: 'Eparina', icon: '💉' },
   { value: 'vitamin_bk', label: 'Vit. BK', icon: '🟡' },
@@ -54,7 +55,7 @@ export default function EventTypeSelector({ selected, onChange }: EventTypeSelec
           <OptionButton key={opt.value} opt={opt} selected={selected} onChange={onChange} />
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {ROW2.map((opt) => (
           <OptionButton key={opt.value} opt={opt} selected={selected} onChange={onChange} />
         ))}

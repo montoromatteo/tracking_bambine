@@ -78,6 +78,16 @@ export default function InserisciPage() {
       return;
     }
 
+    if (eventCategory === 'needs') {
+      const anySelected = selectedBaby === 'both'
+        ? babies.some((b) => perBabyData[b.id]?.hasFeci || perBabyData[b.id]?.hasUrine)
+        : hasFeci || hasUrine;
+      if (!anySelected) {
+        setToast({ message: 'Seleziona almeno Feci o Urine', type: 'error' });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const supabase = createClient();
@@ -150,6 +160,32 @@ export default function InserisciPage() {
               amount_ml: null,
               weight_grams: null,
               notes: null,
+            });
+          }
+        } else if (eventCategory === 'needs') {
+          const isBoth = selectedBaby === 'both';
+          const feci = isBoth && babyId ? perBabyData[babyId]?.hasFeci ?? false : hasFeci;
+          const urine = isBoth && babyId ? perBabyData[babyId]?.hasUrine ?? false : hasUrine;
+
+          if (feci) {
+            eventsToInsert.push({
+              baby_id: babyId,
+              event_type: 'stool',
+              occurred_at: occurredAt,
+              amount_ml: null,
+              weight_grams: null,
+              notes: notes || null,
+            });
+          }
+
+          if (urine) {
+            eventsToInsert.push({
+              baby_id: babyId,
+              event_type: 'urine',
+              occurred_at: occurredAt,
+              amount_ml: null,
+              weight_grams: null,
+              notes: notes || null,
             });
           }
         } else if (eventCategory === 'pumping') {
@@ -225,7 +261,7 @@ export default function InserisciPage() {
 
   const noBabyCategories: EventCategory[] = ['pumping', 'brufen', 'eparina'];
   const showBabySelector = !noBabyCategories.includes(eventCategory);
-  const showBothOption = eventCategory === 'feeding' || eventCategory === 'weight' || eventCategory === 'vitamin_bk';
+  const showBothOption = eventCategory === 'feeding' || eventCategory === 'needs' || eventCategory === 'weight' || eventCategory === 'vitamin_bk';
 
   return (
     <div className="space-y-5 pb-4">
@@ -270,7 +306,7 @@ export default function InserisciPage() {
                     <div className={`text-sm font-bold ${colors.text} text-center`}>
                       {baby.name}
                     </div>
-                    <MlStepper value={data.amountMl} onChange={(v) => updateBabyData(baby.id, 'amountMl', v)} />
+                    <MlStepper compact value={data.amountMl} onChange={(v) => updateBabyData(baby.id, 'amountMl', v)} />
                     <BooleanToggle label="Seno" icon="🤱" value={data.hasSeno} onChange={(v) => updateBabyData(baby.id, 'hasSeno', v)} />
                     <BooleanToggle label="Feci" icon="💩" value={data.hasFeci} onChange={(v) => updateBabyData(baby.id, 'hasFeci', v)} />
                     <BooleanToggle label="Urine" icon="💦" value={data.hasUrine} onChange={(v) => updateBabyData(baby.id, 'hasUrine', v)} />
@@ -288,6 +324,34 @@ export default function InserisciPage() {
                 <BooleanToggle label="Urine" icon="💦" value={hasUrine} onChange={setHasUrine} />
               </div>
             </>
+          )}
+        </section>
+      )}
+
+      {/* Needs Form */}
+      {eventCategory === 'needs' && (
+        <section className="space-y-4">
+          {selectedBaby === 'both' ? (
+            <div className="grid grid-cols-2 gap-3">
+              {babies.map((baby) => {
+                const colors = BABY_COLORS[baby.short_name as keyof typeof BABY_COLORS];
+                const data = perBabyData[baby.id] || { amountMl: ML_DEFAULT, hasSeno: false, hasFeci: false, hasUrine: false };
+                return (
+                  <div key={baby.id} className={`rounded-xl border-2 ${colors.border} ${colors.bg} p-3 space-y-3`}>
+                    <div className={`text-sm font-bold ${colors.text} text-center`}>
+                      {baby.name}
+                    </div>
+                    <BooleanToggle label="Feci" icon="💩" value={data.hasFeci} onChange={(v) => updateBabyData(baby.id, 'hasFeci', v)} />
+                    <BooleanToggle label="Urine" icon="💦" value={data.hasUrine} onChange={(v) => updateBabyData(baby.id, 'hasUrine', v)} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <BooleanToggle label="Feci" icon="💩" value={hasFeci} onChange={setHasFeci} />
+              <BooleanToggle label="Urine" icon="💦" value={hasUrine} onChange={setHasUrine} />
+            </div>
           )}
         </section>
       )}
