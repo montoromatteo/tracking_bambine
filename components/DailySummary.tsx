@@ -6,6 +6,7 @@ import { Baby } from '@/lib/types';
 import { formatDate, formatTime } from '@/lib/date-utils';
 import { BABY_COLORS } from '@/lib/constants';
 import { startOfDay, endOfDay, addDays, subDays } from 'date-fns';
+import HourlyIntakeChart from './HourlyIntakeChart';
 
 interface DailySummaryProps {
   babies: Baby[];
@@ -19,7 +20,7 @@ interface BabySummary {
   stool_count: number;
   urine_count: number;
   last_feeding_at: string | null;
-  vitamin_bk_given: boolean;
+  vitamin_dk_given: boolean;
   last_weight_grams: number | null;
   last_weight_at: string | null;
 }
@@ -63,7 +64,7 @@ export default function DailySummary({ babies }: DailySummaryProps) {
           (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
         )[0];
 
-        const vitaminBk = babyEvents.some((e) => e.event_type === 'vitamin_bk');
+        const vitaminDk = babyEvents.some((e) => e.event_type === 'vitamin_dk');
         const weightEvents = babyEvents
           .filter((e) => e.event_type === 'weight')
           .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
@@ -76,7 +77,7 @@ export default function DailySummary({ babies }: DailySummaryProps) {
           stool_count: stools.length,
           urine_count: urines.length,
           last_feeding_at: lastFeeding?.occurred_at || null,
-          vitamin_bk_given: vitaminBk,
+          vitamin_dk_given: vitaminDk,
           last_weight_grams: weightEvents[0]?.weight_grams || null,
           last_weight_at: weightEvents[0]?.occurred_at || null,
         };
@@ -130,8 +131,8 @@ export default function DailySummary({ babies }: DailySummaryProps) {
                     <Stat label="Ultima poppata" value={formatTime(summary.last_feeding_at)} />
                   )}
                   <Stat
-                    label="Vitamine BK"
-                    value={summary.vitamin_bk_given ? '✅ Date' : '❌ Mancanti'}
+                    label="Vitamine DK"
+                    value={summary.vitamin_dk_given ? '✅ Date' : '❌ Mancanti'}
                   />
                   {summary.last_weight_grams && (
                     <Stat
@@ -144,8 +145,10 @@ export default function DailySummary({ babies }: DailySummaryProps) {
             );
           })}
 
+          <HourlyIntakeChart date={date} title="ml per ora" />
+
           <div className="rounded-xl p-4 bg-blue-50 border-2 border-blue-200">
-            <Stat label="Tirare latte oggi" value={`${pumpingCount} volte`} />
+            <Stat label="Tirare latte" value={`${pumpingCount} volte`} />
           </div>
         </>
       )}

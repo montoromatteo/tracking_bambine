@@ -15,7 +15,7 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   note: 'Nota',
   brufen: 'Brufen',
   eparina: 'Eparina',
-  vitamin_bk: 'Vitamine BK',
+  vitamin_dk: 'Vitamine DK',
 };
 
 export const EVENT_TYPE_ICONS: Record<EventType, string> = {
@@ -28,7 +28,7 @@ export const EVENT_TYPE_ICONS: Record<EventType, string> = {
   note: '📝',
   brufen: '💊',
   eparina: '💉',
-  vitamin_bk: '🟡',
+  vitamin_dk: '🟡',
 };
 
 export const ML_STEP = 5;

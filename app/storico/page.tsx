@@ -7,6 +7,7 @@ import EventCard from '@/components/EventCard';
 import EditEventModal from '@/components/EditEventModal';
 import DailySummary from '@/components/DailySummary';
 import IntakeChart from '@/components/IntakeChart';
+import AvgFeedingMlChart from '@/components/AvgFeedingMlChart';
 import PumpingChart from '@/components/PumpingChart';
 import FrequencyChart from '@/components/FrequencyChart';
 import WeightChart from '@/components/WeightChart';
@@ -130,7 +131,7 @@ export default function StoricoPage() {
               <option value="weight">Peso</option>
               <option value="brufen">Brufen</option>
               <option value="eparina">Eparina</option>
-              <option value="vitamin_bk">Vitamine BK</option>
+              <option value="vitamin_dk">Vitamine DK</option>
               <option value="note">Nota</option>
             </select>
           </div>
@@ -170,6 +171,7 @@ export default function StoricoPage() {
       {tab === 'grafici' && (
         <div className="space-y-6">
           <IntakeChart />
+          <AvgFeedingMlChart />
           <PumpingChart />
           <FrequencyChart />
           <WeightChart />

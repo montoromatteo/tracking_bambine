@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase';
 import { Baby } from '@/lib/types';
 import { BABY_COLORS } from '@/lib/constants';
 import { formatTime, formatRelative, formatDayTime } from '@/lib/date-utils';
-import { startOfDay, endOfDay, differenceInCalendarDays, differenceInWeeks } from 'date-fns';
+import { startOfDay, endOfDay, subDays, differenceInCalendarDays, differenceInWeeks } from 'date-fns';
 import HourlyIntakeChart from '@/components/HourlyIntakeChart';
 
 interface BabyStats {
@@ -16,13 +16,18 @@ interface BabyStats {
   urine_count: number;
   last_feeding_at: string | null;
   last_feeding_ml: number | null;
-  vitamin_bk_given: boolean;
-  vitamin_bk_weeks_left: number | null;
+  vitamin_dk_given: boolean;
+  vitamin_dk_weeks_left: number | null;
   last_weight_grams: number | null;
   last_weight_at: string | null;
+  avg_ml_same_time: number | null;
+  delta_pct: number | null;
 }
 
-const VITAMIN_BK_COURSE_WEEKS = 10;
+const BASELINE_DAYS = 7;
+const TREND_FLAT_THRESHOLD = 10;
+
+const VITAMIN_DK_COURSE_WEEKS = 10;
 
 interface MammaStats {
   eparina_taken_today: boolean;
@@ -64,6 +69,17 @@ export default function HomePage() {
         return;
       }
 
+      // Baseline: last BASELINE_DAYS completed days (excluding today) of feeding_bottle events
+      const baselineStart = startOfDay(subDays(now, BASELINE_DAYS)).toISOString();
+      const { data: baselineEvents } = await supabase
+        .from('events')
+        .select('baby_id, occurred_at, amount_ml')
+        .eq('event_type', 'feeding_bottle')
+        .gte('occurred_at', baselineStart)
+        .lt('occurred_at', dayStart);
+
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
       const newStats: Record<string, BabyStats> = {};
 
       for (const baby of babiesData) {
@@ -80,21 +96,21 @@ export default function HomePage() {
           (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
         )[0];
 
-        const vitaminBk = babyEvents.some((e) => e.event_type === 'vitamin_bk');
+        const vitaminDk = babyEvents.some((e) => e.event_type === 'vitamin_dk');
 
-        // Get first-ever vitamin_bk for this baby to calc weeks left
-        const { data: firstVitBk } = await supabase
+        // Get first-ever vitamin_dk for this baby to calc weeks left
+        const { data: firstVitDk } = await supabase
           .from('events')
           .select('occurred_at')
-          .eq('event_type', 'vitamin_bk')
+          .eq('event_type', 'vitamin_dk')
           .eq('baby_id', baby.id)
           .order('occurred_at', { ascending: true })
           .limit(1);
 
-        let vitBkWeeksLeft: number | null = null;
-        if (firstVitBk && firstVitBk.length > 0) {
-          const weeksElapsed = differenceInWeeks(now, new Date(firstVitBk[0].occurred_at));
-          vitBkWeeksLeft = Math.max(0, VITAMIN_BK_COURSE_WEEKS - weeksElapsed);
+        let vitDkWeeksLeft: number | null = null;
+        if (firstVitDk && firstVitDk.length > 0) {
+          const weeksElapsed = differenceInWeeks(now, new Date(firstVitDk[0].occurred_at));
+          vitDkWeeksLeft = Math.max(0, VITAMIN_DK_COURSE_WEEKS - weeksElapsed);
         }
 
         // Get last weight ever for this baby
@@ -106,6 +122,34 @@ export default function HomePage() {
           .order('occurred_at', { ascending: false })
           .limit(1);
 
+        // Compute "vs. solito" trend: today-so-far vs same-time-of-day avg over baseline days
+        const todaySoFarMl = bottleFeedings.reduce((sum, e) => sum + (e.amount_ml || 0), 0);
+        let avgMlSameTime: number | null = null;
+        let deltaPct: number | null = null;
+        if (baselineEvents && baselineEvents.length > 0) {
+          const perDay: Record<string, number> = {};
+          for (let i = 1; i <= BASELINE_DAYS; i++) {
+            const d = subDays(now, i);
+            perDay[d.toISOString().slice(0, 10)] = 0;
+          }
+          for (const e of baselineEvents) {
+            if (e.baby_id !== baby.id) continue;
+            const t = new Date(e.occurred_at);
+            const key = t.toISOString().slice(0, 10);
+            if (!(key in perDay)) continue;
+            const minutes = t.getHours() * 60 + t.getMinutes();
+            if (minutes <= nowMinutes) perDay[key] += e.amount_ml || 0;
+          }
+          const daysCounted = Object.keys(perDay).length;
+          if (daysCounted >= BASELINE_DAYS) {
+            const sum = Object.values(perDay).reduce((a, b) => a + b, 0);
+            avgMlSameTime = sum / daysCounted;
+            if (avgMlSameTime > 0) {
+              deltaPct = ((todaySoFarMl - avgMlSameTime) / avgMlSameTime) * 100;
+            }
+          }
+        }
+
         newStats[baby.id] = {
           total_ml: bottleFeedings.reduce((sum, e) => sum + (e.amount_ml || 0), 0),
           feeding_count: feedingCount,
@@ -113,10 +157,12 @@ export default function HomePage() {
           urine_count: urines.length,
           last_feeding_at: lastFeeding?.occurred_at || null,
           last_feeding_ml: lastFeeding?.amount_ml || null,
-          vitamin_bk_given: vitaminBk,
-          vitamin_bk_weeks_left: vitBkWeeksLeft,
+          vitamin_dk_given: vitaminDk,
+          vitamin_dk_weeks_left: vitDkWeeksLeft,
           last_weight_grams: lastWeight?.[0]?.weight_grams || null,
           last_weight_at: lastWeight?.[0]?.occurred_at || null,
+          avg_ml_same_time: avgMlSameTime,
+          delta_pct: deltaPct,
         };
       }
 
@@ -207,6 +253,7 @@ export default function HomePage() {
                   <div>
                     <div className="text-xs text-gray-500">Totale ml</div>
                     <div className="text-2xl font-bold text-gray-800">{s.total_ml}</div>
+                    <TrendBadge deltaPct={s.delta_pct} avgMlSameTime={s.avg_ml_same_time} />
                   </div>
                   <div>
                     <div className="text-xs text-gray-500">Poppate</div>
@@ -231,15 +278,15 @@ export default function HomePage() {
                     </div>
                   )}
                   <div>
-                    <div className="text-xs text-gray-500">Vitamine BK</div>
+                    <div className="text-xs text-gray-500">Vitamine DK</div>
                     <div className="text-lg font-semibold">
-                      {s.vitamin_bk_given ? '✅ Date' : '❌ Mancanti'}
+                      {s.vitamin_dk_given ? '✅ Date' : '❌ Mancanti'}
                     </div>
-                    {s.vitamin_bk_weeks_left !== null && (
+                    {s.vitamin_dk_weeks_left !== null && (
                       <div className="text-xs text-gray-400">
-                        {s.vitamin_bk_weeks_left === 0
+                        {s.vitamin_dk_weeks_left === 0
                           ? 'Ciclo completato'
-                          : `${s.vitamin_bk_weeks_left} sett. rimaste`}
+                          : `${s.vitamin_dk_weeks_left} sett. rimaste`}
                       </div>
                     )}
                   </div>
@@ -337,6 +384,39 @@ export default function HomePage() {
       >
         + Inserisci
       </Link>
+    </div>
+  );
+}
+
+function TrendBadge({
+  deltaPct,
+  avgMlSameTime,
+}: {
+  deltaPct: number | null;
+  avgMlSameTime: number | null;
+}) {
+  if (deltaPct === null || avgMlSameTime === null) return null;
+  const rounded = Math.round(deltaPct);
+  const abs = Math.abs(rounded);
+  const tooltip = `Media allo stesso orario, ultimi ${BASELINE_DAYS} gg: ${Math.round(avgMlSameTime)} ml`;
+  let label: string;
+  let cls: string;
+  if (abs < TREND_FLAT_THRESHOLD) {
+    label = '≈ in linea';
+    cls = 'bg-gray-100 text-gray-600';
+  } else if (rounded > 0) {
+    label = `↑ ${abs}% vs solito`;
+    cls = 'bg-green-100 text-green-700';
+  } else {
+    label = `↓ ${abs}% vs solito`;
+    cls = 'bg-amber-100 text-amber-700';
+  }
+  return (
+    <div
+      title={tooltip}
+      className={`inline-block mt-1 px-2 py-0.5 rounded-md text-xs font-semibold ${cls}`}
+    >
+      {label}
     </div>
   );
 }

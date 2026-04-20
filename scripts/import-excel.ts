@@ -190,11 +190,11 @@ async function main() {
       });
     }
 
-    // Check for vitamin BK in comments
-    if (babyId && commentiLower.includes('vitamine bk')) {
+    // Check for vitamin DK in comments
+    if (babyId && (commentiLower.includes('vitamine dk') || commentiLower.includes('vitamine bk'))) {
       events.push({
         baby_id: babyId,
-        event_type: 'vitamin_bk',
+        event_type: 'vitamin_dk',
         occurred_at: occurredAt,
         amount_ml: null,
         weight_grams: null,

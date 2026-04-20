@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { BABY_COLORS } from '@/lib/constants';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, format } from 'date-fns';
 import {
   LineChart,
   Line,
@@ -21,16 +21,24 @@ interface HourPoint {
   adele: number | null;
 }
 
-export default function HourlyIntakeChart() {
+interface HourlyIntakeChartProps {
+  date?: Date;
+  title?: string;
+}
+
+export default function HourlyIntakeChart({ date, title }: HourlyIntakeChartProps) {
   const [data, setData] = useState<HourPoint[]>([]);
   const [hasData, setHasData] = useState(false);
+
+  const isFixedDay = date !== undefined;
+  const dayKey = date ? format(date, 'yyyy-MM-dd') : '';
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const now = new Date();
-      const dayStart = startOfDay(now).toISOString();
-      const dayEnd = endOfDay(now).toISOString();
+      const target = date ?? new Date();
+      const dayStart = startOfDay(target).toISOString();
+      const dayEnd = endOfDay(target).toISOString();
 
       const [{ data: babies }, { data: events }] = await Promise.all([
         supabase.from('babies').select('*'),
@@ -68,10 +76,11 @@ export default function HourlyIntakeChart() {
     }
     load();
 
+    if (isFixedDay) return;
     const handleFocus = () => load();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  }, [isFixedDay, dayKey, date]);
 
   if (!hasData) return null;
 
@@ -98,9 +107,11 @@ export default function HourlyIntakeChart() {
     return DotRenderer;
   };
 
+  const heading = title ?? 'ml per ora (oggi)';
+
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-600 mb-2">ml per ora (oggi)</h3>
+      <h3 className="text-sm font-semibold text-gray-600 mb-2">{heading}</h3>
       <div className="bg-white rounded-xl p-3 shadow-sm">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data}>
