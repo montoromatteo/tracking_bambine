@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase';
 import { Baby } from '@/lib/types';
 import { BABY_COLORS } from '@/lib/constants';
 import { formatTime, formatRelative, formatDayTime } from '@/lib/date-utils';
-import { startOfDay, endOfDay, subDays, differenceInCalendarDays, differenceInWeeks } from 'date-fns';
+import { startOfDay, endOfDay, subDays, differenceInWeeks } from 'date-fns';
 import HourlyIntakeChart from '@/components/HourlyIntakeChart';
 
 interface BabyStats {
@@ -30,16 +30,11 @@ const TREND_FLAT_THRESHOLD = 10;
 const VITAMIN_DK_COURSE_WEEKS = 10;
 
 interface MammaStats {
-  eparina_taken_today: boolean;
-  eparina_last_at: string | null;
-  eparina_days_left: number | null;
   brufen_taken_today: boolean;
   brufen_last_at: string | null;
   pumping_count_today: number;
   pumping_last_at: string | null;
 }
-
-const EPARINA_COURSE_DAYS = 5;
 
 export default function HomePage() {
   const [babies, setBabies] = useState<Baby[]>([]);
@@ -169,37 +164,13 @@ export default function HomePage() {
       setStats(newStats);
 
       // Mamma stats
-      const todayEparina = events.filter((e) => e.event_type === 'eparina');
       const todayBrufen = events.filter((e) => e.event_type === 'brufen');
       const todayPumping = events.filter((e) => e.event_type === 'pumping');
 
-      // Get first-ever eparina to calculate days left in course
-      const { data: firstEparina } = await supabase
-        .from('events')
-        .select('occurred_at')
-        .eq('event_type', 'eparina')
-        .order('occurred_at', { ascending: true })
-        .limit(1);
-
-      let eparinaDaysLeft: number | null = null;
-      if (firstEparina && firstEparina.length > 0) {
-        const firstDate = new Date(firstEparina[0].occurred_at);
-        const daysSinceStart = differenceInCalendarDays(now, firstDate);
-        eparinaDaysLeft = Math.max(0, EPARINA_COURSE_DAYS - daysSinceStart);
-      }
-
-      // Get last brufen/eparina ever (for "last taken" display)
       const { data: lastBrufenAll } = await supabase
         .from('events')
         .select('occurred_at')
         .eq('event_type', 'brufen')
-        .order('occurred_at', { ascending: false })
-        .limit(1);
-
-      const { data: lastEparinaAll } = await supabase
-        .from('events')
-        .select('occurred_at')
-        .eq('event_type', 'eparina')
         .order('occurred_at', { ascending: false })
         .limit(1);
 
@@ -208,9 +179,6 @@ export default function HomePage() {
       )[0];
 
       setMammaStats({
-        eparina_taken_today: todayEparina.length > 0,
-        eparina_last_at: lastEparinaAll?.[0]?.occurred_at || null,
-        eparina_days_left: eparinaDaysLeft,
         brufen_taken_today: todayBrufen.length > 0,
         brufen_last_at: lastBrufenAll?.[0]?.occurred_at || null,
         pumping_count_today: todayPumping.length,
@@ -313,35 +281,6 @@ export default function HomePage() {
             <div className="rounded-2xl p-4 bg-teal-50 border-2 border-teal-200">
               <h2 className="font-bold text-lg text-teal-700 mb-3">Mamma</h2>
               <div className="grid grid-cols-2 gap-3">
-                {/* Eparina */}
-                <div className="col-span-2 bg-white/60 rounded-xl p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs text-gray-500">Eparina oggi</div>
-                      <div className="text-lg font-semibold">
-                        {mammaStats.eparina_taken_today ? '✅ Fatta' : '❌ Da fare'}
-                      </div>
-                    </div>
-                    {mammaStats.eparina_days_left !== null && (
-                      <div className="text-right">
-                        <div className="text-xs text-gray-500">Giorni rimasti</div>
-                        <div className={`text-2xl font-bold ${
-                          mammaStats.eparina_days_left === 0 ? 'text-green-600' : 'text-teal-700'
-                        }`}>
-                          {mammaStats.eparina_days_left === 0
-                            ? 'Finito!'
-                            : mammaStats.eparina_days_left}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {mammaStats.eparina_last_at && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Ultima: {formatDayTime(mammaStats.eparina_last_at)}
-                    </div>
-                  )}
-                </div>
-
                 {/* Brufen */}
                 <div>
                   <div className="text-xs text-gray-500">Brufen</div>

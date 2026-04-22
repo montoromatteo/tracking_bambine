@@ -1,6 +1,6 @@
 'use client';
 
-export type EventCategory = 'feeding' | 'needs' | 'pumping' | 'weight' | 'note' | 'brufen' | 'eparina' | 'vitamin_dk';
+export type EventCategory = 'feeding' | 'needs' | 'pumping' | 'weight' | 'note' | 'brufen' | 'vitamin_dk';
 
 interface EventTypeSelectorProps {
   selected: EventCategory;
@@ -17,7 +17,6 @@ const ROW1: { value: EventCategory; label: string; icon: string }[] = [
 const ROW2: { value: EventCategory; label: string; icon: string }[] = [
   { value: 'pumping', label: 'Tirare Latte', icon: '💧' },
   { value: 'brufen', label: 'Brufen', icon: '💊' },
-  { value: 'eparina', label: 'Eparina', icon: '💉' },
   { value: 'vitamin_dk', label: 'Vit. DK', icon: '🟡' },
 ];
 

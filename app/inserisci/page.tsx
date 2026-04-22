@@ -224,15 +224,6 @@ export default function InserisciPage() {
             weight_grams: null,
             notes: notes || null,
           });
-        } else if (eventCategory === 'eparina') {
-          eventsToInsert.push({
-            baby_id: null,
-            event_type: 'eparina',
-            occurred_at: occurredAt,
-            amount_ml: null,
-            weight_grams: null,
-            notes: notes || null,
-          });
         } else if (eventCategory === 'vitamin_dk') {
           eventsToInsert.push({
             baby_id: babyId,
@@ -259,7 +250,7 @@ export default function InserisciPage() {
     }
   };
 
-  const noBabyCategories: EventCategory[] = ['pumping', 'brufen', 'eparina'];
+  const noBabyCategories: EventCategory[] = ['pumping', 'brufen'];
   const showBabySelector = !noBabyCategories.includes(eventCategory);
   const showBothOption = eventCategory === 'feeding' || eventCategory === 'needs' || eventCategory === 'weight' || eventCategory === 'vitamin_dk';
 
