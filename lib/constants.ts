@@ -16,6 +16,7 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   brufen: 'Brufen',
   eparina: 'Eparina',
   vitamin_dk: 'Vitamine DK',
+  bath: 'Bagnetto',
 };
 
 export const EVENT_TYPE_ICONS: Record<EventType, string> = {
@@ -29,6 +30,7 @@ export const EVENT_TYPE_ICONS: Record<EventType, string> = {
   brufen: '💊',
   eparina: '💉',
   vitamin_dk: '🟡',
+  bath: '🛁',
 };
 
 export const ML_STEP = 5;

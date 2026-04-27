@@ -20,6 +20,7 @@ interface BabyStats {
   vitamin_dk_weeks_left: number | null;
   last_weight_grams: number | null;
   last_weight_at: string | null;
+  last_bath_at: string | null;
   avg_ml_same_time: number | null;
   delta_pct: number | null;
 }
@@ -117,6 +118,15 @@ export default function HomePage() {
           .order('occurred_at', { ascending: false })
           .limit(1);
 
+        // Get last bath ever for this baby
+        const { data: lastBath } = await supabase
+          .from('events')
+          .select('occurred_at')
+          .eq('event_type', 'bath')
+          .eq('baby_id', baby.id)
+          .order('occurred_at', { ascending: false })
+          .limit(1);
+
         // Compute "vs. solito" trend: today-so-far vs same-time-of-day avg over baseline days
         const todaySoFarMl = bottleFeedings.reduce((sum, e) => sum + (e.amount_ml || 0), 0);
         let avgMlSameTime: number | null = null;
@@ -156,6 +166,7 @@ export default function HomePage() {
           vitamin_dk_weeks_left: vitDkWeeksLeft,
           last_weight_grams: lastWeight?.[0]?.weight_grams || null,
           last_weight_at: lastWeight?.[0]?.occurred_at || null,
+          last_bath_at: lastBath?.[0]?.occurred_at || null,
           avg_ml_same_time: avgMlSameTime,
           delta_pct: deltaPct,
         };
@@ -269,6 +280,19 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
+                  <div>
+                    <div className="text-xs text-gray-500">Ultimo bagnetto</div>
+                    {s.last_bath_at ? (
+                      <>
+                        <div className="text-lg font-semibold text-gray-800">🛁</div>
+                        <div className="text-xs text-gray-400">
+                          {formatDayTime(s.last_bath_at)}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-400">Mai fatto</div>
+                    )}
+                  </div>
                 </div>
               </div>
             );

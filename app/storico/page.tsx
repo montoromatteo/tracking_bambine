@@ -132,6 +132,7 @@ export default function StoricoPage() {
               <option value="brufen">Brufen</option>
               <option value="eparina">Eparina</option>
               <option value="vitamin_dk">Vitamine DK</option>
+              <option value="bath">Bagnetto</option>
               <option value="note">Nota</option>
             </select>
           </div>

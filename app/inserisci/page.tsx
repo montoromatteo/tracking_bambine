@@ -233,6 +233,15 @@ export default function InserisciPage() {
             weight_grams: null,
             notes: notes || null,
           });
+        } else if (eventCategory === 'bath') {
+          eventsToInsert.push({
+            baby_id: babyId,
+            event_type: 'bath',
+            occurred_at: occurredAt,
+            amount_ml: null,
+            weight_grams: null,
+            notes: notes || null,
+          });
         }
       }
 
@@ -252,7 +261,7 @@ export default function InserisciPage() {
 
   const noBabyCategories: EventCategory[] = ['pumping', 'brufen'];
   const showBabySelector = !noBabyCategories.includes(eventCategory);
-  const showBothOption = eventCategory === 'feeding' || eventCategory === 'needs' || eventCategory === 'weight' || eventCategory === 'vitamin_dk';
+  const showBothOption = eventCategory === 'feeding' || eventCategory === 'needs' || eventCategory === 'weight' || eventCategory === 'vitamin_dk' || eventCategory === 'bath';
 
   return (
     <div className="space-y-5 pb-4">

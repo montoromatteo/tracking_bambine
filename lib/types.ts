@@ -8,7 +8,8 @@ export type EventType =
   | 'note'
   | 'brufen'
   | 'eparina'
-  | 'vitamin_dk';
+  | 'vitamin_dk'
+  | 'bath';
 
 export interface Baby {
   id: string;
