@@ -21,6 +21,7 @@ interface BabyStats {
   last_weight_grams: number | null;
   last_weight_at: string | null;
   last_bath_at: string | null;
+  last_stool_at: string | null;
   avg_ml_same_time: number | null;
   delta_pct: number | null;
 }
@@ -127,6 +128,15 @@ export default function HomePage() {
           .order('occurred_at', { ascending: false })
           .limit(1);
 
+        // Get last stool ever for this baby
+        const { data: lastStool } = await supabase
+          .from('events')
+          .select('occurred_at')
+          .eq('event_type', 'stool')
+          .eq('baby_id', baby.id)
+          .order('occurred_at', { ascending: false })
+          .limit(1);
+
         // Compute "vs. solito" trend: today-so-far vs same-time-of-day avg over baseline days
         const todaySoFarMl = bottleFeedings.reduce((sum, e) => sum + (e.amount_ml || 0), 0);
         let avgMlSameTime: number | null = null;
@@ -167,6 +177,7 @@ export default function HomePage() {
           last_weight_grams: lastWeight?.[0]?.weight_grams || null,
           last_weight_at: lastWeight?.[0]?.occurred_at || null,
           last_bath_at: lastBath?.[0]?.occurred_at || null,
+          last_stool_at: lastStool?.[0]?.occurred_at || null,
           avg_ml_same_time: avgMlSameTime,
           delta_pct: deltaPct,
         };
@@ -256,6 +267,21 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
+                  <div>
+                    <div className="text-xs text-gray-500">Ultima cacca</div>
+                    {s.last_stool_at ? (
+                      <>
+                        <div className="text-sm font-semibold text-gray-700">
+                          💩 {formatDayTime(s.last_stool_at)}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {formatRelative(s.last_stool_at)}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-400">Mai</div>
+                    )}
+                  </div>
                   <div>
                     <div className="text-xs text-gray-500">Vitamine DK</div>
                     <div className="text-lg font-semibold">
