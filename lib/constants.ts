@@ -34,4 +34,8 @@ export const EVENT_TYPE_ICONS: Record<EventType, string> = {
 };
 
 export const ML_STEP = 5;
-export const ML_DEFAULT = 50;
+export const ML_DEFAULT = 130;
+
+export const FEEDING_INTERVAL_OPTIONS = [3, 3.5, 4, 4.5, 5, 5.5, 6] as const;
+export const FEEDING_INTERVAL_DEFAULT = 3;
+export const FEEDING_INTERVAL_STORAGE_KEY = 'feedingIntervalHours';

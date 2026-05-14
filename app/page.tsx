@@ -4,9 +4,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
 import { Baby } from '@/lib/types';
-import { BABY_COLORS } from '@/lib/constants';
+import {
+  BABY_COLORS,
+  FEEDING_INTERVAL_OPTIONS,
+  FEEDING_INTERVAL_DEFAULT,
+  FEEDING_INTERVAL_STORAGE_KEY,
+} from '@/lib/constants';
 import { formatTime, formatRelative, formatDayTime } from '@/lib/date-utils';
-import { startOfDay, endOfDay, subDays, differenceInWeeks } from 'date-fns';
+import { startOfDay, endOfDay, subDays, differenceInWeeks, addHours } from 'date-fns';
 import HourlyIntakeChart from '@/components/HourlyIntakeChart';
 
 interface BabyStats {
@@ -22,6 +27,7 @@ interface BabyStats {
   last_weight_at: string | null;
   last_bath_at: string | null;
   last_stool_at: string | null;
+  last_feeding_ever_at: string | null;
   avg_ml_same_time: number | null;
   delta_pct: number | null;
 }
@@ -43,6 +49,22 @@ export default function HomePage() {
   const [stats, setStats] = useState<Record<string, BabyStats>>({});
   const [mammaStats, setMammaStats] = useState<MammaStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [intervalHours, setIntervalHours] = useState<number>(FEEDING_INTERVAL_DEFAULT);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(FEEDING_INTERVAL_STORAGE_KEY);
+    if (saved) {
+      const n = parseFloat(saved);
+      if ((FEEDING_INTERVAL_OPTIONS as readonly number[]).includes(n)) {
+        setIntervalHours(n);
+      }
+    }
+  }, []);
+
+  function handleIntervalChange(v: number) {
+    setIntervalHours(v);
+    localStorage.setItem(FEEDING_INTERVAL_STORAGE_KEY, String(v));
+  }
 
   useEffect(() => {
     async function load() {
@@ -137,6 +159,15 @@ export default function HomePage() {
           .order('occurred_at', { ascending: false })
           .limit(1);
 
+        // Get last feeding (bottle or breast) ever for this baby — for "prossima poppata" prediction
+        const { data: lastFeedingEver } = await supabase
+          .from('events')
+          .select('occurred_at')
+          .in('event_type', ['feeding_bottle', 'feeding_breast'])
+          .eq('baby_id', baby.id)
+          .order('occurred_at', { ascending: false })
+          .limit(1);
+
         // Compute "vs. solito" trend: today-so-far vs same-time-of-day avg over baseline days
         const todaySoFarMl = bottleFeedings.reduce((sum, e) => sum + (e.amount_ml || 0), 0);
         let avgMlSameTime: number | null = null;
@@ -178,6 +209,7 @@ export default function HomePage() {
           last_weight_at: lastWeight?.[0]?.occurred_at || null,
           last_bath_at: lastBath?.[0]?.occurred_at || null,
           last_stool_at: lastStool?.[0]?.occurred_at || null,
+          last_feeding_ever_at: lastFeedingEver?.[0]?.occurred_at || null,
           avg_ml_same_time: avgMlSameTime,
           delta_pct: deltaPct,
         };
@@ -220,6 +252,24 @@ export default function HomePage() {
     <div className="space-y-4 pb-4">
       <h1 className="text-2xl font-bold text-gray-800">Tracking Bambine</h1>
       <p className="text-sm text-gray-500">Oggi</p>
+
+      <div className="bg-white rounded-xl p-3 shadow-sm flex items-center justify-between">
+        <label htmlFor="feeding-interval" className="text-sm font-medium text-gray-700">
+          Intervallo poppate
+        </label>
+        <select
+          id="feeding-interval"
+          value={intervalHours}
+          onChange={(e) => handleIntervalChange(parseFloat(e.target.value))}
+          className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-semibold bg-white tap-target"
+        >
+          {FEEDING_INTERVAL_OPTIONS.map((h) => (
+            <option key={h} value={h}>
+              {h} h
+            </option>
+          ))}
+        </select>
+      </div>
 
       {loading ? (
         <div className="text-center py-8 text-gray-400">Caricamento...</div>
@@ -264,6 +314,22 @@ export default function HomePage() {
                       </div>
                       <div className="text-xs text-gray-400">
                         {formatRelative(s.last_feeding_at)}
+                      </div>
+                    </div>
+                  )}
+                  {s.last_feeding_ever_at && (
+                    <div>
+                      <div className="text-xs text-gray-500">Prossima poppata</div>
+                      <div className="text-sm font-semibold text-gray-700">
+                        ⏰{' '}
+                        {formatTime(
+                          addHours(new Date(s.last_feeding_ever_at), intervalHours).toISOString()
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {formatRelative(
+                          addHours(new Date(s.last_feeding_ever_at), intervalHours).toISOString()
+                        )}
                       </div>
                     </div>
                   )}

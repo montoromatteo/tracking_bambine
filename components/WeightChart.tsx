@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 
 interface DataPoint {
-  label: string;
+  date: number;
   amelia: number | null;
   adele: number | null;
 }
@@ -57,7 +57,7 @@ export default function WeightChart() {
       const points: DataPoint[] = [...dayMap.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([day, vals]) => ({
-          label: format(new Date(day), 'dd/MM'),
+          date: new Date(day).getTime(),
           amelia: vals.amelia,
           adele: vals.adele,
         }));
@@ -85,13 +85,23 @@ export default function WeightChart() {
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+            <XAxis
+              dataKey="date"
+              type="number"
+              scale="time"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={(ts) => format(new Date(ts), 'dd/MM')}
+              tick={{ fontSize: 11 }}
+            />
             <YAxis
               tick={{ fontSize: 11 }}
               domain={['dataMin - 0.05', 'dataMax + 0.05']}
               tickFormatter={(v) => v.toFixed(2)}
             />
-            <Tooltip formatter={(value) => `${Number(value).toFixed(2)} kg`} />
+            <Tooltip
+              formatter={(value) => `${Number(value).toFixed(2)} kg`}
+              labelFormatter={(ts) => format(new Date(ts as number), 'dd/MM')}
+            />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line
               type="monotone"
